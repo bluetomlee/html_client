@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="icon" href="./favicon.ico">
+        <title>下一个话题！ - Admin - ShakeNext</title>
+
+        <link href="/bootstrap.min.css" rel="stylesheet">
+
+        <script src='http://dogstar.show.shakenext.com:12345/socket.io/socket.io.js'></script> 
+    </head> 
+
+    <body>  
+        <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">ShakeNext</a>
+                </div>
+                <div class="navbar-collapse collapse">
+                    <form class="navbar-form navbar-right" role="form">
+                        <div class="form-group">
+                            <input type="text" placeholder="Email" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <input type="password" placeholder="Password" class="form-control">
+                        </div>
+                        <button type="button" class="btn btn-success">Sign in</button>
+                    </form>
+                </div><!--/.navbar-collapse -->
+            </div>
+        </div>
+
+        <!-- Main jumbotron for a primary marketing message or call to action -->
+        <div class="jumbotron">
+            <div class="container">
+                <br /><br /><br />
+                <h1 id="showTitle">下一个话题！</h1>
+                <br />
+                <div id="showContent">
+                    <p>下一个话题！是<b>ShakeNext!</b>系列产品中一个有趣的在线演示小工具，相当一个简易的在线限时PPT。还可摇一摇进入下一个话题，轻松讨论，炫酷切换！</p>
+                    <p>更多ShakeNext!小工具，敬请期待！</p>
+                </div>
+                <br />
+                <div>[ - <span id="shakeNextNum">38</span> ]</div>
+                <br /><br /><br />
+            </div>
+        </div>
+
+        <div class="container"> 
+
+            <div class="row">
+                <form class="form-horizontal" role="form">
+                    <div class="form-group">
+                        <label for="inputTitle" class="col-sm-2 control-label">主题</label>
+                        <div class="col-sm-10">
+                            <input type="input" class="form-control" id="inputTitle" placeholder="请输入下一个主题">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputContent" class="col-sm-2 control-label">内容</label>
+                        <div class="col-sm-10">
+                            <textarea class="form-control" id="inputContent" placeholder="请输入可选的内容"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <button type="button" class="btn btn-info" id="sendNewsToServer">发布</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <hr />
+            <div class="row">
+                <div id='show' class="well"></div>
+            </div>  
+
+            <hr />
+
+            <footer>
+            <p>&copy; Dogstar 2014</p>
+            </footer> <!-- /container -->
+        </div>
+
+    </body>
+
+</html>
+
+<script type='text/javascript'>         
+    var HTML5WebSockets = {};          
+HTML5WebSockets.socketio = {              
+clientSocket: null,                 
+
+              initialize: function () { 
+                  HTML5WebSockets.socketio.show('正在进入ShakeNext ...', true);                      
+                  HTML5WebSockets.socketio.clientSocket = io.connect('http://dogstar.show.shakenext.com:12345');
+                  HTML5WebSockets.socketio.clientSocket.on('connect', function () {
+                          HTML5WebSockets.socketio.show('欢迎进入ShakeNext!', true);                         
+                          });                                    
+                  HTML5WebSockets.socketio.clientSocket.on('doNext', function (data) {                    
+                          //HTML5WebSockets.socketio.show('收到新的消息：' + data);   
+                          var params = JSON.parse(data);   
+                          document.querySelector('#showTitle').innerHTML = params.title;    
+                          document.querySelector('#showContent').innerHTML = params.content;      
+                          });                     
+                  HTML5WebSockets.socketio.clientSocket.on('disconnect', function () {                                 
+                          HTML5WebSockets.socketio.show('ShakeNext已关闭!', true);                    
+                          });                                    
+
+                  document.querySelector('#sendNewsToServer').onclick = function () { 
+                      HTML5WebSockets.socketio.emitCustomMessageToServer(document.querySelector('#inputTitle').value, document.querySelector('#inputContent').value); 
+
+                      document.querySelector('#inputTitle').value = '';     
+                      document.querySelector('#inputContent').value = '';    
+                  };              
+              },                           
+
+emitCustomMessageToServer: function (title, content) {     
+                               content = '<p>' + content + '</p>';             
+                               var data = {"cmd" : "showNews", "params" : {"title" : title, "content" : content}};
+                               var jsonStr = JSON.stringify(data);
+                               HTML5WebSockets.socketio.clientSocket.emit('goNext', jsonStr);                  
+
+                               document.querySelector('#showTitle').innerHTML = title;    
+                               document.querySelector('#showContent').innerHTML = content; 
+                               HTML5WebSockets.socketio.show(title + '&nbsp;' + '已发送');              
+                           },
+
+show: function (message, isSystem) { 
+          var nowDate = new Date(); 
+          var dateStr = nowDate.getHours() + ':' + nowDate.getMinutes();
+          if (isSystem == true) message = '<b>' + message + '</b>';
+          document.querySelector('#show').innerHTML = '[' + dateStr + ']&nbsp;' + message + '<br />' + document.querySelector('#show').innerHTML; 
+      } 
+}      
+
+HTML5WebSockets.socketio.initialize();      
+</script> 
